@@ -51,20 +51,20 @@ public class TicTacToeController {
 			}
 
 			// check to see if there is a game going on
-			if (gameStateHandler.isGameInProgress()) {
+			if (gameStateHandler.isGameInProgress(channelId)) {
 				return new RichMessage("Another game is already in progress, please wait until it is done.");
 			}
 
 			Player challenger = new Player(userId, userName);
 			Player opponent = Player.makePlayerFromEncodedText(challengeUserEncodedString);
 
-			if (gameStateHandler.isThereChallengeBetweenPlayers(challenger, opponent)) {
+			if (gameStateHandler.isThereChallengeBetweenPlayers(channelId, challenger, opponent)) {
 				return new RichMessage(challenger.getEncodedPlayerText()
 						+ ", there is a challenge between you guys already, type /ttt bring it on "
 						+ challenger.getEncodedPlayerText() + ", to start game!");
 			}
 
-			gameStateHandler.addChallengeBetweenPlayers(challenger, opponent);
+			gameStateHandler.addChallengeBetweenPlayers(channelId, challenger, opponent);
 
 			RichMessage richMessage = new RichMessage(opponent.getEncodedPlayerText() + ", type: /ttt bring it on "
 					+ challenger.getEncodedPlayerText() + ", to accept the challenge!");
@@ -79,7 +79,7 @@ public class TicTacToeController {
 			}
 
 			// check to see if there is a game going on
-			if (gameStateHandler.isGameInProgress()) {
+			if (gameStateHandler.isGameInProgress(channelId)) {
 				return new RichMessage("Another game is already in progress, please wait until it is done.");
 			}
 
@@ -87,12 +87,12 @@ public class TicTacToeController {
 			Player opponent = Player.makePlayerFromEncodedText(bringItOnUserEncodedString);
 
 			// check to see if a challenge has been made yet
-			if (!gameStateHandler.isThereChallengeBetweenPlayers(challenger, opponent)) {
+			if (!gameStateHandler.isThereChallengeBetweenPlayers(channelId, challenger, opponent)) {
 				return new RichMessage("Please issue a challenge to " + opponent.getEncodedPlayerText() + " first!");
 			}
 
 			Game game = new Game(opponent, challenger);
-			gameStateHandler.addGame(game);
+			gameStateHandler.addGame(channelId, game);
 
 			RichMessage richMessage = new RichMessage(game.displayBoard());
 			richMessage.setResponseType("in_channel");
@@ -109,7 +109,7 @@ public class TicTacToeController {
 			attachments[0] = new Attachment();
 
 			Player currentPlayer = new Player(userId, userName);
-			Game game = gameStateHandler.getGame();
+			Game game = gameStateHandler.getGame(channelId);
 			if (game == null) {
 				richMessage = new RichMessage("No game in progress, type: /ttt challenge @someone to play!");
 			} else if (game.getNextMovePlayer().equals(currentPlayer)) {
@@ -135,14 +135,15 @@ public class TicTacToeController {
 						richMessage = new RichMessage(game.displayBoard());
 						richMessage.setResponseType("in_channel");
 						attachments[0].setText("Game has ended in a DRAW!");
-						gameStateHandler.resetGame(game);
+						gameStateHandler.resetGame(channelId, game);
 					} else if (result.equals(Result.WIN)) {
 						richMessage = new RichMessage(game.displayBoard());
 						richMessage.setResponseType("in_channel");
 						attachments[0].setText(currentPlayer.getEncodedPlayerText() + " has WON the game!");
-						gameStateHandler.resetGame(game);
+						gameStateHandler.resetGame(channelId, game);
 					} else {
 						richMessage = new RichMessage(game.displayBoard());
+						richMessage.setResponseType("in_channel");
 						attachments[0].setText(game.getNextMovePlayer().getEncodedPlayerText()
 								+ " please make your move by typing: /ttt mark x:y");
 					}
@@ -161,7 +162,7 @@ public class TicTacToeController {
 			richMessage.setAttachments(attachments);
 			return richMessage;
 		} else if (commandText.equalsIgnoreCase("show game")) {
-			Game game = gameStateHandler.getGame();
+			Game game = gameStateHandler.getGame(channelId);
 			RichMessage richMessage = null;
 			if (game == null) {
 				richMessage = new RichMessage("No game in progress, type: /ttt challenge @someone to play!");
